@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>เข้าสู่ระบบ</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="container py-5">
+
+  <h1 class="text-center mb-4">🔐 เข้าสู่ระบบ</h1>
+
+  <form id="login-form" class="mx-auto" style="max-width: 400px;">
+    <div class="mb-3">
+      <label for="email" class="form-label">อีเมล</label>
+      <input type="email" class="form-control" id="email" required />
+    </div>
+    <div class="mb-3">
+      <label for="password" class="form-label">รหัสผ่าน</label>
+      <input type="password" class="form-control" id="password" required />
+    </div>
+    <button type="submit" class="btn btn-primary w-100">เข้าสู่ระบบ</button>
+  </form>
+
+  <div id="status" class="mt-3 text-center text-danger"></div>
+
+  <div class="text-center mt-4">
+    <a href="index.html" class="btn btn-outline-secondary">⬅️ กลับสู่หน้าแรก</a>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("login-form");
+    const statusDiv = document.getElementById("status");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = "profile.html";
+      } catch (err) {
+        statusDiv.textContent = "เข้าสู่ระบบไม่สำเร็จ: " + err.message;
+      }
+    });
+  </script>
+
+</body>
+</html>

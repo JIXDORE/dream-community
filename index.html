@@ -2,23 +2,31 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>เพ้อ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light px-3">
-    <a class="navbar-brand fw-bold" href="#">เพ้อ</a>
+    <a class="navbar-brand fw-bold" href="index.html">เพ้อ</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarContent">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarContent">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="#">เข้าสู่ระบบ</a></li>
+      <ul class="navbar-nav ms-auto align-items-center">
         <li class="nav-item">
-          <a class="btn btn-outline-light ms-2" href="register.html">สมัครสมาชิก</a>
+          <a class="nav-link" href="login.html" id="login-link">เข้าสู่ระบบ</a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-outline-dark ms-2" href="register.html" id="register-link">สมัครสมาชิก</a>
+        </li>
+        <li class="nav-item d-none" id="profile-link">
+          <a class="btn btn-dark ms-2 d-flex align-items-center" href="profile.html">
+            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="avatar" width="28" height="28" class="rounded-circle me-2">
+            โปรไฟล์ของฉัน
+          </a>
         </li>
       </ul>
     </div>
@@ -35,73 +43,38 @@
   <!-- Section: โพสต์ล่าสุด -->
   <section class="container my-5">
     <h2 class="text-center mb-4">โพสต์ล่าสุด</h2>
-    <div id="no-posts" class="text-center text-muted my-5">
+    <div class="text-center text-muted my-5">
       <img src="https://cdn-icons-png.flaticon.com/512/742/742751.png" alt="no post" width="120" style="opacity: 0.6;">
       <p class="mt-3 fs-5">ยังไม่มีใครโพสต์อะไรเลย~</p>
     </div>
-
-    <!-- ส่วนแสดงโพสต์ (จะใช้ในอนาคตเมื่อมีข้อมูลจริง) -->
-    <div id="post-list" class="row g-4 d-none">
-      <!-- โพสต์จะถูกใส่เข้ามาแบบ dynamic ด้วย JS -->
-    </div>
-
   </section>
 
-  <!-- Footer -->
   <footer class="bg-light text-center py-3">
     <p class="mb-0">© 2025 เพ้อ. สงวนลิขสิทธิ์.</p>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- ✅ Firebase script -->
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "./firebase-config.js";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
 
-    const noPostsDiv = document.getElementById("no-posts");
-    const postListDiv = document.getElementById("post-list");
+    const loginLink = document.getElementById("login-link");
+    const registerLink = document.getElementById("register-link");
+    const profileLink = document.getElementById("profile-link");
 
-    // 👤 ตรวจสอบสถานะผู้ใช้
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
-        const ref = doc(db, "users", user.uid);
-        const snap = await getDoc(ref);
-        const role = snap.exists() ? snap.data().role : null;
-
-        const justRegistered = localStorage.getItem("justRegistered");
-
-        if (!role && justRegistered === "true") {
-          localStorage.removeItem("justRegistered");
-          window.location.href = "choose-role.html";
-          return; // อย่าลืม return เพื่อไม่ให้ไปทำ post ด้านล่าง
-        }
-
-        console.log("เข้าสู่ระบบในบทบาท:", role);
+        loginLink.classList.add("d-none");
+        registerLink.classList.add("d-none");
+        profileLink.classList.remove("d-none");
       } else {
-        console.log("ยังไม่เข้าสู่ระบบ");
-      }
-
-      // 🔁 ตรวจสอบโพสต์ (mock ขณะนี้)
-      const posts = []; // ← ตอนนี้ยังไม่มีข้อมูลจริง
-
-      if (posts.length === 0) {
-        noPostsDiv.classList.remove("d-none");
-        postListDiv.classList.add("d-none");
-      } else {
-        noPostsDiv.classList.add("d-none");
-        postListDiv.classList.remove("d-none");
-
-        // ในอนาคต: วนโพสต์จากฐานข้อมูล
-        posts.forEach(post => {
-          // เพิ่ม HTML โพสต์เข้าไปใน postListDiv
-        });
+        loginLink.classList.remove("d-none");
+        registerLink.classList.remove("d-none");
+        profileLink.classList.add("d-none");
       }
     });
   </script>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>โพสต์ผลงาน</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container py-5">
+
+  <h1 class="mb-4">🎨 โพสต์ผลงานของคุณ</h1>
+
+  <form id="work-form">
+    <div class="mb-3">
+      <label for="work-title" class="form-label">ชื่อผลงาน</label>
+      <input type="text" class="form-control" id="work-title" required>
+    </div>
+    <div class="mb-3">
+      <label for="work-description" class="form-label">รายละเอียด</label>
+      <textarea class="form-control" id="work-description" rows="4" required></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="inspired-by" class="form-label">ได้แรงบันดาลใจจากไอเดียของใคร (อีเมล, UID หรือชื่อเล่น)</label>
+      <input type="text" class="form-control" id="inspired-by">
+    </div>
+    <div class="mb-3">
+      <label for="work-file" class="form-label">แนบผลงาน (รูปภาพหรือวิดีโอ)</label>
+      <input type="file" class="form-control" id="work-file" accept="image/*,video/*">
+    </div>
+    <button type="submit" class="btn btn-success">โพสต์ผลงาน</button>
+  </form>
+
+  <div id="status" class="mt-4 text-success"></div>
+
+  <!-- Firebase Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const form = document.getElementById("work-form");
+    const statusDiv = document.getElementById("status");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("กรุณาเข้าสู่ระบบก่อน");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      const role = snap.exists() ? snap.data().role : null;
+
+      if (role !== "maker") {
+        alert("หน้านี้สำหรับผู้สร้างเท่านั้น");
+        window.location.href = "index.html";
+        return;
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById("work-title").value;
+      const description = document.getElementById("work-description").value;
+      const inspiredBy = document.getElementById("inspired-by").value;
+      const file = document.getElementById("work-file").files[0];
+
+      let fileUrl = "";
+      if (file) {
+        const storageRef = ref(storage, `work-files/${Date.now()}-${file.name}`);
+        await uploadBytes(storageRef, file);
+        fileUrl = await getDownloadURL(storageRef);
+      }
+
+      await addDoc(collection(db, "works"), {
+        title,
+        description,
+        fileUrl,
+        inspiredBy,
+        createdAt: serverTimestamp(),
+        userId: auth.currentUser.uid
+      });
+
+      statusDiv.innerText = "✅ โพสต์ผลงานสำเร็จแล้ว!";
+      form.reset();
+    });
+  </script>
+</body>
+</html>

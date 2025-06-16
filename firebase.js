@@ -6,7 +6,7 @@
   import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
-    apiKey: "",
+    apiKey: "AIzaSyCQ5EtSLiHFfrfKA4fBF3mOs9LyofJmzTk",
     authDomain: "dream-community-f781a.firebaseapp.com",
     projectId: "dream-community-f781a",
     storageBucket: "dream-community-f781a.firebasestorage.app",

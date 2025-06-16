@@ -1,5 +1,5 @@
 export const firebaseConfig = {
-  apiKey: "",
+  apiKey: "AIzaSyCQ5EtSLiHFfrfKA4fBF3mOs9LyofJmzTk",
   authDomain: "dream-community-f781a.firebaseapp.com",
   projectId: "dream-community-f781a",
   storageBucket: "dream-community-f781a.appspot.com",
