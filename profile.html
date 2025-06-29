@@ -104,9 +104,10 @@
     });
   </script>
   
-  <a href="postidea.html" id="floating-idea-button" class="btn btn-success rounded-circle shadow" style="display: none;">
+  <!-- ปุ่มโพสต์ลอย -->
+  <div id="floating-idea-button" class="btn btn-success rounded-circle shadow" style="opacity: 0.3;">
     ✍️
-  </a>
+  </div>
 
   <style>
     #floating-idea-button {
@@ -120,6 +121,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      user-select: none;
+      touch-action: none;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
     }
   </style>
 
@@ -135,47 +140,67 @@
 
     const ideaButton = document.getElementById("floating-idea-button");
 
+    let isDragging = false;
+    let dragStartTime = 0;
+
+    const startDrag = (e) => {
+      isDragging = false;
+      dragStartTime = Date.now();
+      e.preventDefault();
+    };
+
+    const onDrag = (e) => {
+      if (!dragStartTime) return;
+
+      const elapsed = Date.now() - dragStartTime;
+      if (elapsed < 200) return; // ต้องกดค้างก่อน
+
+      if (!isDragging) {
+        isDragging = true; // เพิ่งเริ่มลากหลัง 200ms
+      }
+
+      if (isDragging) {
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+        ideaButton.style.left = `${x - 25}px`;
+        ideaButton.style.top = `${y - 25}px`;
+        ideaButton.style.bottom = 'auto';
+        ideaButton.style.right = 'auto';
+        ideaButton.style.position = 'fixed';
+      }
+    };
+
+    const stopDrag = () => {
+      const elapsed = Date.now() - dragStartTime;
+      if (!isDragging && elapsed < 200) {
+        window.location.href = "postidea.html";
+      }
+      isDragging = false;
+      dragStartTime = 0;
+    };
+
+    // เช็ก role
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userRef = doc(db, "users", user.uid);
         const snap = await getDoc(userRef);
         const role = snap.exists() ? snap.data().role : null;
+
         if (role === "idea_creator") {
-          ideaButton.style.display = "flex";
+          ideaButton.style.opacity = "1";
+          ideaButton.style.pointerEvents = "auto";
         }
       }
     });
 
-    // Dragable feature
-    let isDragging = false;
-
+    // ใส่ event สำหรับ drag + click
     ideaButton.addEventListener("mousedown", startDrag);
     ideaButton.addEventListener("touchstart", startDrag);
     document.addEventListener("mousemove", onDrag);
     document.addEventListener("touchmove", onDrag);
     document.addEventListener("mouseup", stopDrag);
     document.addEventListener("touchend", stopDrag);
-
-    function startDrag(e) {
-      isDragging = true;
-    }
-
-    function onDrag(e) {
-      if (!isDragging) return;
-      const x = e.touches ? e.touches[0].clientX : e.clientX;
-      const y = e.touches ? e.touches[0].clientY : e.clientY;
-      ideaButton.style.left = `${x - 25}px`;
-      ideaButton.style.top = `${y - 25}px`;
-      ideaButton.style.bottom = 'auto';
-      ideaButton.style.right = 'auto';
-      ideaButton.style.position = 'fixed';
-    }
-
-    function stopDrag() {
-      isDragging = false;
-    }
   </script>
-
 
 </body>
 </html>
