@@ -103,5 +103,50 @@
       window.location.href = "index.html";
     });
   </script>
+  
+  <!-- ปุ่มลอยเฉพาะผู้คิดไอเดีย -->
+  <a href="postidea.html" id="floating-idea-button" class="btn btn-success rounded-circle shadow d-none">
+    ✍️
+  </a>
+
+  <style>
+    #floating-idea-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { firebaseConfig } from "./firebase-config.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const ideaButton = document.getElementById("floating-idea-button");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userRef = doc(db, "users", user.uid);
+        const snap = await getDoc(userRef);
+        const role = snap.exists() ? snap.data().role : null;
+        if (role === "idea_creator") {
+          ideaButton.classList.remove("d-none");
+        }
+      }
+    });
+  </script>
+
 </body>
 </html>
