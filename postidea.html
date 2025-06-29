@@ -6,10 +6,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container py-5">
-  
+
   <h1 class="mb-4">🧠 โพสต์ไอเดียของคุณ</h1>
 
-  <!-- ฟอร์มโพสต์ไอเดีย -->
   <form id="idea-form">
     <div class="mb-3">
       <label for="idea-title" class="form-label">ชื่อไอเดีย</label>
@@ -19,31 +18,34 @@
       <label for="idea-description" class="form-label">รายละเอียด</label>
       <textarea class="form-control" id="idea-description" rows="4" required></textarea>
     </div>
+    <!-- ระบบรูปภาพยังไม่เปิดใช้งาน -->
+    <!--
     <div class="mb-3">
       <label for="idea-image" class="form-label">อัปโหลดรูปภาพ (ถ้ามี)</label>
       <input type="file" class="form-control" id="idea-image" accept="image/*">
     </div>
+    -->
     <button type="submit" class="btn btn-primary">โพสต์ไอเดีย</button>
   </form>
 
-  <!-- แสดงสถานะ -->
   <div id="status" class="mt-4 text-success"></div>
 
-  <!-- Firebase + Auth check -->
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "./firebase-config.js";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app);
 
     const form = document.getElementById("idea-form");
     const statusDiv = document.getElementById("status");
+
+    let currentUser = null;
+    let draftTimer = null;
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -59,7 +61,44 @@
       if (role !== "idea_creator") {
         alert("หน้านี้สำหรับผู้คิดไอเดียเท่านั้น");
         window.location.href = "index.html";
+        return;
       }
+
+      currentUser = user;
+
+      // โหลดโครงร่างอัตโนมัติ
+      const draftRef = doc(db, "ideaDrafts", user.uid);
+      const draftSnap = await getDoc(draftRef);
+      if (draftSnap.exists()) {
+        const data = draftSnap.data();
+        document.getElementById("idea-title").value = data.title || "";
+        document.getElementById("idea-description").value = data.description || "";
+        statusDiv.innerText = "📄 โหลดโครงร่างล่าสุดเรียบร้อยแล้ว";
+      }
+    });
+
+    // Auto-save โครงร่าง
+    const saveDraft = async () => {
+      if (!currentUser) return;
+      const title = document.getElementById("idea-title").value;
+      const description = document.getElementById("idea-description").value;
+      if (!title && !description) return;
+
+      await setDoc(doc(db, "ideaDrafts", currentUser.uid), {
+        title,
+        description,
+        updatedAt: serverTimestamp()
+      });
+
+      statusDiv.innerText = "💾 บันทึกอัตโนมัติแล้ว";
+    };
+
+    // ใส่ debounce ป้องกันบันทึกถี่เกิน
+    ["idea-title", "idea-description"].forEach(id => {
+      document.getElementById(id).addEventListener("input", () => {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(saveDraft, 800);
+      });
     });
 
     form.addEventListener("submit", async (e) => {
@@ -67,26 +106,24 @@
 
       const title = document.getElementById("idea-title").value;
       const description = document.getElementById("idea-description").value;
-      const imageFile = document.getElementById("idea-image").files[0];
 
-      let imageUrl = "";
-
-      if (imageFile) {
-        const storageRef = ref(storage, `idea-images/${Date.now()}-${imageFile.name}`);
-        await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(storageRef);
-      }
+      // const imageFile = document.getElementById("idea-image").files[0]; // ปิดไว้ชั่วคราว
+      let imageUrl = ""; // ยังไม่ใช้ระบบอัปโหลดภาพ
 
       await addDoc(collection(db, "ideas"), {
         title,
         description,
         imageUrl,
         createdAt: serverTimestamp(),
-        userId: auth.currentUser.uid
+        userId: auth.currentUser.uid,
+        published: true
       });
 
       statusDiv.innerText = "✅ โพสต์ไอเดียสำเร็จแล้ว!";
       form.reset();
+
+      // เคลียร์ร่างหลังโพสต์
+      await setDoc(doc(db, "ideaDrafts", currentUser.uid), {});
     });
   </script>
 
